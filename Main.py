@@ -1,12 +1,19 @@
+import time
 import discord
 from discord.ext import commands
+
+startTime = time.time()
 
 client = commands.Bot(command_prefix= "?")
 
 @client.event
-async def on_ready():
-    print('Logged in as {0.user}'.format(client))
+async def on_connect():
+    print(f'Successfully connected to Discord | Time elapsed: {str(round(time.time() - startTime, 2))} seconds.')
 
+@client.event
+async def on_ready():
+    print(f'Logged in as {client.user} | Time elapsed: {str(round(time.time() - startTime, 2))} seconds.\nLatency: { str(round(client.latency * 1000))} milliseconds')
+#print('Logged in as {0.user}'.format(client))
 @client.event
 async def on_message(message):
     if message.author == client.user:
