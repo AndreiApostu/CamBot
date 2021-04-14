@@ -16,6 +16,6 @@ async def on_ready():
 
 @client.event
 async def on_disconnect():
-    print(f'Bot lost connection to Discord | Time elapsed: {str(round(time.time() - startTime, 2))} seconds.')
+    print(f'Lost connection to Discord | Time elapsed: {str(round(time.time() - startTime, 2))} seconds.')
 
 client.run("ODMxMzc1OTAwNjE2NDI1NDky.YHUVJA.IKQJdRn5b2I7Spu3Ozei3glkAC4")
