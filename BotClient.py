@@ -24,3 +24,6 @@ class BotClient(discord.Client):
     async def on_member_remove(self, member):
         if member.guild.system_channel is not None:
             await member.guild.system_channel.send(f'{member.mention} has left {member.guild}')
+    
+    async def on_message(self):
+        
