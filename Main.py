@@ -13,6 +13,7 @@ async def on_connect():
 @client.event
 async def on_ready():
     print(f'Logged in as {client.user} | Time elapsed: {str(round(time.time() - startTime, 2))} seconds.\nLatency: { str(round(client.latency * 1000))} milliseconds')
+    await client.change_presence(activity=discord.Game('Everything i put effort into turns to shit'))
 
 @client.event
 async def on_disconnect():
