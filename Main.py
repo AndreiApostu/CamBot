@@ -2,12 +2,9 @@ import time
 import discord
 from discord.ext import commands
 
-client = discord.Client(intents=discord.Intents.all())
-
-startTime = time.time() #Registers when the code started running
-
-#client = commands.Bot(command_prefix= "?")
-#client = discord.Intents.all()
+startTime = time.time()
+#client = discord.Client(intents=discord.Intents.all())
+client = commands.Bot(command_prefix= "?",intents = discord.Intents.all(), case_insensitive = True)
 
 @client.event
 async def on_connect():
@@ -31,5 +28,14 @@ async def on_member_remove(member):
     if member.guild.system_channel is not None:
          await member.guild.system_channel.send(f'{member.mention} has left {member.guild}')
 
-#client = BotClient(intents=discord.Intents.all())
+@client.command()
+async def Avatar(ctx, member: discord.Member = None):
+    if member is None:
+        member = ctx.author
+    await ctx.send(f'{member.avatar_url}')
+
+@client.command()
+async def Latency(ctx):
+    await ctx.send(f'{str(round(client.latency * 1000))}ms')
+
 client.run("ODMxMzc1OTAwNjE2NDI1NDky.YHUVJA.IKQJdRn5b2I7Spu3Ozei3glkAC4")
