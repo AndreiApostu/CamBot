@@ -2,10 +2,11 @@ import time
 import discord
 import sys
 import logging
+import re
 
 from discord.ext import commands
 
-logging.basicConfig(level=logging.INFO)
+#logging.basicConfig(level=logging.INFO)
 
 startTime = time.time()
 #client = discord.Client(intents=discord.Intents.all())
@@ -38,7 +39,14 @@ async def on_member_remove(member):
 async def Avatar(ctx, member: discord.Member = None):
     if member is None:
         member = ctx.author
+    
     await ctx.send(f'{member.avatar_url}')
+
+@Avatar.error
+async def info_error(ctx, error):
+    if isinstance(error, commands.BadArgument):
+        argument = re.findall(r'"(.*?)(?<!\\)"', str(error.args))
+        await ctx.send(f'{ argument[0] } is not a member ⚠')
 
 @client.command()
 async def Latency(ctx):
