@@ -24,7 +24,7 @@ ytdl_format_options = {
     'source_address': '0.0.0.0'
 }
 
-FFMPEG_OPTIONS = {
+FFMPEG_DEFAULT_OPTIONS = {
     'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
     'options': '-vn'
     }
@@ -56,32 +56,32 @@ class YTDLSource(discord.PCMVolumeTransformer):
 
 
 class Audio(commands.Cog):
-    playerList = [] #the links are processed into player objects
-    addressList = []
-    currentTitle = ""
-    currentAddress = ""
-    currentPlayer = None
+    player_list = [] #the links are processed into player objects
+    address_list = []
+    current_title = ""
+    current_address = ""
+    current_player = None
     def __init__(self, bot):
         self.bot = bot
-        self.currentTitle = ""
-        self.playerList = []
-        self.addressList = []
-        self.currentAddress = ""
-        self.currentPlayer = None
+        self.current_title = ""
+        self.player_list = []
+        self.address_list = []
+        self.current_address = ""
+        self.current_player = None
         
 
     async def playlist(self, ctx):
         while(ctx.voice_client.is_playing() or ctx.voice_client.is_paused()):
                 await asyncio.sleep(1)
         else: #if its not playing anything add the new link 
-            if len(self.playerList):
-                ctx.voice_client.play(self.playerList[0], after=lambda e: print(f'Player error: {e}') if e else None)
-                await ctx.send(f'Now playing: {self.playerList[0].title}')
-                self.currentTitle = self.playerList[0].title
-                self.currentAddress = self.addressList[0]
-                self.currentPlayer = self.playerList[0]
-                self.playerList.pop(0)
-                self.addressList.pop(0)
+            if len(self.player_list):
+                ctx.voice_client.play(self.player_list[0], after=lambda e: print(f'Player error: {e}') if e else None)
+                await ctx.send(f'Now playing: {self.player_list[0].title}')
+                self.current_title = self.player_list[0].title
+                self.current_address = self.address_list[0]
+                self.current_player = self.player_list[0]
+                self.player_list.pop(0)
+                self.address_list.pop(0)
                 await self.playlist(ctx)
             else:
                 seconds = 5
@@ -100,12 +100,12 @@ class Audio(commands.Cog):
                     await ctx.author.voice.channel.connect()
                 
                 async with ctx.typing():
-                    self.addressList.append(address)
-                    self.playerList.append(await YTDLSource.from_url(address, FFMPEG_OPTIONS ,loop=self.bot.loop, stream=True)) #buffers the link
-                if(len(self.playerList) == 1 and ctx.voice_client.is_playing()  == False  and ctx.voice_client.is_paused() == False): #prevents the start of a second recursive method
+                    self.address_list.append(address)
+                    self.player_list.append(await YTDLSource.from_url(address, FFMPEG_DEFAULT_OPTIONS ,loop=self.bot.loop, stream=True)) #buffers the link
+                if(len(self.player_list) == 1 and ctx.voice_client.is_playing()  == False  and ctx.voice_client.is_paused() == False): #prevents the start of a second recursive method
                     await self.playlist(ctx)
                 else:
-                    await ctx.send(f'Added {self.playerList[len(self.playerList)-1].title} to playlist.')
+                    await ctx.send(f'Added {self.player_list[len(self.player_list)-1].title} to playlist.')
             else:
                 await ctx.send("You must be in a voice channel ⚠")
 
@@ -113,8 +113,8 @@ class Audio(commands.Cog):
     async def disconnect(self, ctx):
         async with ctx.typing():
             await ctx.voice_client.disconnect()
-            self.playerList.clear
-            self.currentTitle = "" #cleans up the list 
+            self.player_list.clear
+            self.current_title = "" #cleans up the list 
             await ctx.send(f'Leaving {ctx.author.voice.channel}')
     
     @commands.command(aliases=['remove'])
@@ -122,70 +122,70 @@ class Audio(commands.Cog):
         async with ctx.typing():
             if ctx.voice_client is not None:
                 if len(index) == 0: #if no special arguments just remove the current url thats playing
-                    await ctx.send(f'Skipped: {self.currentTitle}')
                     ctx.voice_client.stop()
+                    await ctx.send(f'Skipped: {self.current_title}')
                 else:
-                    skipString = "These have been skipped:"
+                    skip_string = "These have been skipped:"
                     print(index)
-                    wrongIndex = False
+                    wrong_index = False
                     skip = False
                     for x in range(len(index)):
                         if isinstance(index[x], int):
                         
-                            if index[x] <= len(self.playerList) and index[x] >= 0:
+                            if index[x] <= len(self.player_list) and index[x] >= 0:
                                 
                                 if index[x] == 0: #skips the current url
                                     ctx.voice_client.stop()
-                                    skipString += f'\n{index[x]}. {self.currentTitle}'
+                                    skip_string += f'\n{index[x]}. {self.current_title}'
                                     skip = True
                                 else:
-                                    skipString += f'\n{index[x]}. {self.playerList[index[x]-1].title}'
-                                    self.playerList.pop((index[x]-1))
+                                    skip_string += f'\n{index[x]}. {self.player_list[index[x]-1].title}'
+                                    self.player_list.pop((index[x]-1))
                                     skip = True
                             else:
-                                wrongIndex = True
+                                wrong_index = True
 
                     if skip == False: #if it didnt manage to remove anything clear the "these have been skipped" part of the message
-                        skipString = ""
+                        skip_string = ""
 
                     #tried to make it more user friendly, overall its just shit 
-                    if wrongIndex == True:
-                        skipString = 'Index out of range ⚠\n' + skipString
+                    if wrong_index == True:
+                        skip_string = 'Index out of range ⚠\n' + skip_string
 
-                    await ctx.send(skipString)
+                    await ctx.send(skip_string)
             else:
                 await ctx.send("Client is not in a channel ⚠")
 
     @commands.command(aliases=['list', 'playlist'])
     async def queue(self, ctx):
         async with ctx.typing():
-            audioQueue = f'Now playing: {self.currentTitle}'
+            audio_queue = f'Now playing: {self.current_title}'
             
-            for x in range(len(self.playerList)):
-                audioQueue += f'\n{str(x+1)}. {self.playerList[x].title}'
+            for x in range(len(self.player_list)):
+                audio_queue += f'\n{str(x+1)}. {self.player_list[x].title}'
             
-            await ctx.send(audioQueue)
+            await ctx.send(audio_queue)
 
     @commands.command(aliases=['move'])
-    async def switch(self, ctx, firstIndex:typing.Optional[int] = None, secondIndex:typing.Optional[int] = None):
+    async def switch(self, ctx, first_index:typing.Optional[int] = None, second_index:typing.Optional[int] = None):
         async with ctx.typing():
-            if len(self.playerList) > 0:
-                if firstIndex == None or secondIndex == None:
+            if len(self.player_list) > 0:
+                if first_index == None or second_index == None:
                     await ctx.send("Bad parameter ⚠ \nEnter a number (eg: 5, 1)")
-                elif firstIndex == secondIndex:
+                elif first_index == second_index:
                     await ctx.send("Equal parameters ⚠")
-                elif firstIndex <= len(self.playerList) and secondIndex <= len(self.playerList) and firstIndex  >= 0 and secondIndex >= 0:
-                    if firstIndex == 0 or secondIndex == 0: #0 represents the currently playing link
-                        biggerIndex = max(firstIndex, secondIndex)
+                elif first_index <= len(self.player_list) and second_index <= len(self.player_list) and first_index  >= 0 and second_index >= 0:
+                    if first_index == 0 or second_index == 0: #0 represents the currently playing link
+                        bigger_index = max(first_index, second_index)
                         ctx.voice_client.stop()
-                        ctx.voice_client.play(self.playerList[biggerIndex-1], after=lambda e: print(f'Player error: {e}') if e else None)
-                        self.playerList.pop(biggerIndex-1)
-                        await ctx.send(f'Switched playlist positions between {firstIndex} and {secondIndex}')
+                        ctx.voice_client.play(self.player_list[bigger_index-1], after=lambda e: print(f'Player error: {e}') if e else None)
+                        self.player_list.pop(bigger_index-1)
+                        await ctx.send(f'Switched playlist positions between {first_index} and {second_index}')
                         #currently it does not switch places between the currently playing and the other index
                         #instead it skips the currently playing and plays the other index
                     else:
-                        self.playerList[firstIndex-1], self.playerList[secondIndex-1] = self.playerList[secondIndex-1], self.playerList[firstIndex-1]
-                        await ctx.send(f'Switched playlist positions between {firstIndex} and {secondIndex}')
+                        self.player_list[first_index-1], self.player_list[second_index-1] = self.player_list[second_index-1], self.player_list[first_index-1]
+                        await ctx.send(f'Switched playlist positions between {first_index} and {second_index}')
                 else:
                     await ctx.send("Parameters out of range ⚠")
             else:
@@ -195,12 +195,12 @@ class Audio(commands.Cog):
     async def seek(self, ctx, timeStamp):
         pass
 
-    @commands.command(aliases=['playAgain', 'again'])
+    @commands.command(aliases=['playAgain', 'again']) #replays the last song, has like 50 bugs so its nowhere near functional
     async def replay(self, ctx):
         if ctx.author.voice is not None:
             if ctx.voice_client is not None:
-                self.addressList.insert(0, self.currentAddress)
-                self.playerList.insert(0, await YTDLSource.from_url(self.currentAddress, FFMPEG_OPTIONS ,loop=self.bot.loop, stream=True))
+                self.address_list.insert(0, self.current_address)
+                self.player_list.insert(0, await YTDLSource.from_url(self.current_address, FFMPEG_DEFAULT_OPTIONS ,loop=self.bot.loop, stream=True))
                 if(ctx.voice_client.is_playing):
                     ctx.voice_client.stop()
 
@@ -210,7 +210,7 @@ class Audio(commands.Cog):
             if ctx.voice_client.is_playing() or ctx.voice_client.is_paused() :
                 time = datetime.now()
 
-                await ctx.author.send(f'Played: {self.currentTitle} on {time.strftime("%d/%m/%Y %H:%M:%S")}\n{self.currentAddress}')
+                await ctx.author.send(f'Played: {self.current_title} on {time.strftime("%d/%m/%Y %H:%M:%S")}\n{self.current_address}')
             else:
                 await ctx.send("Client is not playing ⚠")
         else:
