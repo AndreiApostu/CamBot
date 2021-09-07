@@ -90,7 +90,7 @@ async def Message(ctx, member: discord.Member, *, message:str):
 
 @client.command()
 async def Upload(ctx, member: discord.Member):
-        await member.send(file=discord.File("C:\\Users\\Andrei\\Downloads\\test.mp3"))
+        await member.send(file=discord.File("C:\\Users\\Andrei\\Downloads\\ffworking.mp4"))
 
 client.add_cog(Audio(client))
 
